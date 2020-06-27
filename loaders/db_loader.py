@@ -8,6 +8,15 @@ from utils.normalization import calculate_db_zscore
 
 class DBLoader(AbstractLoader):
     def __init__(self, path, sep, host=':memory:', norm_function='zscore'):
+        """
+        Init data loader.
+
+        Args:
+            path: str - Path to the file.
+            sep: str – Separator for data in the file.
+            host: str – SQLite DB name.
+            norm_function: str – Function name for normalization.
+        """
         self.path = path
         self.sep = sep
         self.host = host
@@ -15,6 +24,11 @@ class DBLoader(AbstractLoader):
 
     @print_time
     def load_data(self):
+        '''Load data from file to db.
+
+        Loading data from file with predefined path and separator.
+        Data is automatically loaded to db to job table.
+        '''
         self.con = sqlite3.connect(self.host)
         self.cursor = self.con.cursor()
         self.cursor.execute("create table job (id_job INT, features);")
@@ -28,14 +42,14 @@ class DBLoader(AbstractLoader):
             values (?, ?);''', to_db)
 
     @print_time
-    def create_code_features(self, features_code, n_features):
-        for i in range(n_features):
-            self.cursor.execute(f"alter table job add feature_{features_code}_{i} INT;")
-        self.cursor.execute(f"alter table job add max_feature_{features_code}_index INT;")
-        self.cursor.execute(f"alter table job add max_feature_{features_code}_abs_mean_diff DOUBLE;")
-
-    @print_time
     def extract_features(self):
+        '''Extract normalized values.
+
+        Extract normalized values with predefined function
+        and max values: max index and abs mean diff.
+
+        Values are processed based on their feature code.
+        '''
         self.cursor.execute("select * from job")
         feature_rows = self.cursor.fetchall()
 
@@ -47,7 +61,7 @@ class DBLoader(AbstractLoader):
             curr_values = []
 
             if int(features_code) not in created_column_ids:
-                self.create_code_features(int(features_code), len(features))
+                self._create_code_features(int(features_code), len(features))
                 created_column_ids.append(int(features_code))
 
             max_index = features.index(max(features))
@@ -74,6 +88,12 @@ class DBLoader(AbstractLoader):
 
     @print_time
     def export(self, filename):
+        """
+        Export extracted features to file.
+
+        Args:
+            filename: str - Path to the file.
+        """
         columns = self.cursor.execute(f'''pragma table_info(job)''').fetchall()
 
         columns_to_export = [col[1] for col in columns
@@ -105,3 +125,10 @@ class DBLoader(AbstractLoader):
             {method} is not supported.
             Please choose from: zscore.
         ''')
+
+    def _create_code_features(self, features_code, n_features):
+        for i in range(n_features):
+            self.cursor.execute(f"alter table job add feature_{features_code}_{i} INT;")
+        self.cursor.execute(f"alter table job add max_feature_{features_code}_index INT;")
+        self.cursor.execute(f"alter table job add max_feature_{features_code}_abs_mean_diff DOUBLE;")
+
