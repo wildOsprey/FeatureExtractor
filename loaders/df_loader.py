@@ -21,38 +21,19 @@ class DFLoader(AbstractLoader):
 
     @print_time
     def extract_features(self):
-        max_df = pd.DataFrame()
-
-        norm_df = self.df['features'].str.split(',', expand = True).add_prefix('feature_')
-        norm_df.rename(columns={'feature_0': 'code'}, inplace=True)
-        norm_df = norm_df.astype(int)
+        norm_df = self._split_df()
         feature_sets = set(norm_df['code'].tolist())
 
-        for features_code in feature_sets:
-            max_df[f'max_feature_{features_code}_index'] = norm_df.apply(
-                lambda x: self._get_max_ind(x)
-                if int(x['code']) == features_code else None,
-                axis=1
-            )
+        stand_results = []
 
-            max_df[f'max_feature_{features_code}_abs_mean_diff'] = norm_df.apply(
-                lambda x: self._get_abs_mean_diff(x)
-                if int(x['code']) == features_code else None,
-                axis=1
-            )
-
-        results = []
+        max_df = self._process_max_functions(feature_sets, norm_df)
 
         for features_code in feature_sets:
-            data = self.norm_function(norm_df[norm_df['code']==features_code])
-            current_columns = [col for col in data.columns.tolist() if str(col).startswith('feature_')]
-            rename_columns  = [f"feature_{features_code}_{int(col.split('_')[1])-1}_stand" for col in current_columns]
-            columns_to_rename = dict(zip(current_columns,rename_columns))
-            data.rename(columns=columns_to_rename, inplace=True)
-            results.append(data)
-        results.append(max_df)
+            data = self._process_feature_set(features_code, norm_df)
+            stand_results.append(data)
+        stand_results.append(max_df)
 
-        self.processed_df = pd.concat(results, sort=False)
+        self.processed_df = pd.concat(stand_results, sort=False)
 
     @print_time
     def export(self, filename):
@@ -71,3 +52,36 @@ class DFLoader(AbstractLoader):
         if method == 'zscore':
             return calculate_paralel_df_zscore_filter
         return None
+
+    def _process_max_functions(self, feature_sets, norm_df):
+        max_df = pd.DataFrame()
+
+        for features_code in feature_sets:
+            max_df[f'max_feature_{features_code}_index'] = norm_df.apply(
+                lambda x: self._get_max_ind(x)
+                if int(x['code']) == features_code else None,
+                axis=1
+            )
+
+            max_df[f'max_feature_{features_code}_abs_mean_diff'] = norm_df.apply(
+                lambda x: self._get_abs_mean_diff(x)
+                if int(x['code']) == features_code else None,
+                axis=1
+            )
+        return max_df
+
+    def _process_feature_set(self, features_code, norm_df):
+        data = self.norm_function(norm_df[norm_df['code'] == features_code])
+        current_columns = [col for col in data.columns.tolist() if str(col).startswith('feature_')]
+        rename_columns  = [f"feature_{features_code}_{int(col.split('_')[1])-1}_stand" for col in current_columns]
+        columns_to_rename = dict(zip(current_columns, rename_columns))
+        data.rename(columns=columns_to_rename, inplace=True)
+        return data
+
+    def _split_df(self):
+        norm_df = self.df['features'].str \
+            .split(',', expand=True).add_prefix('feature_')
+
+        norm_df.rename(columns={'feature_0': 'code'}, inplace=True)
+        norm_df = norm_df.astype(int)
+        return norm_df
