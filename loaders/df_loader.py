@@ -7,12 +7,24 @@ from utils.normalization import calculate_paralel_df_zscore_filter
 
 class DFLoader(AbstractLoader):
     def __init__(self, path, sep, norm_function):
+        """
+        Init data loader.
+
+        Args:
+            path: str - Path to the file.
+            sep: str – Separator for data in the file.
+            norm_function: str – Function name for normalization.
+        """
         self.path = path
         self.sep = sep
         self.norm_function = self._get_norm_function(norm_function)
 
     @print_time
     def load_data(self):
+        '''Load data from file.
+
+        Loading data from file with predefined path and separator.
+        '''
         self.df = pd.read_csv(
             self.path,
             sep=self.sep,
@@ -21,6 +33,13 @@ class DFLoader(AbstractLoader):
 
     @print_time
     def extract_features(self):
+        """Extract normalized values.
+
+        Extract normalized values with predefined function
+        and max values: max index and abs mean diff.
+
+        Values are processed based on their feature code.
+        """
         norm_df = self._split_df()
         feature_sets = set(norm_df['code'].tolist())
 
@@ -37,6 +56,12 @@ class DFLoader(AbstractLoader):
 
     @print_time
     def export(self, filename):
+        """
+        Export extracted features to file.
+
+        Args:
+            filename: str - Path to the file.
+        """
         self.processed_df['id_job'] = self.df['id_job']
         self.processed_df.to_csv(filename, sep=self.sep)
 
