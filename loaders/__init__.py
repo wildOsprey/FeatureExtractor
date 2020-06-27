@@ -8,5 +8,8 @@ def get_loader(**kwargs):
         return DBLoader(**kwargs)
     elif loader_type == 'pandas':
         return DFLoader(**kwargs)
-
-    return None
+    else:
+        raise Exception(f'''
+            {loader_type} is not supported.
+            Please choose from: db, pandas.
+        ''')

@@ -100,4 +100,8 @@ class DBLoader(AbstractLoader):
     def _get_norm_function(self, method):
         if method == 'zscore':
             return calculate_db_zscore
-        return None
+        else:
+            raise Exception(f'''
+            {method} is not supported.
+            Please choose from: zscore.
+        ''')

@@ -51,7 +51,11 @@ class DFLoader(AbstractLoader):
     def _get_norm_function(self, method):
         if method == 'zscore':
             return calculate_paralel_df_zscore_filter
-        return None
+        else:
+            raise Exception(f'''
+            {method} is not supported.
+            Please choose from: zscore.
+        ''')
 
     def _process_max_functions(self, feature_sets, norm_df):
         max_df = pd.DataFrame()
