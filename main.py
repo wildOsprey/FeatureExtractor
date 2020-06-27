@@ -29,18 +29,18 @@ def main():
     )
 
     parser.add_argument("--sep", type=str, default='\t', help="Separator for file processing.")
-    parser.add_argument("--output_dir", type=str, default="test_proc.tsv", help="Name or full path for output data.")
+    parser.add_argument("--output_file", type=str, default="test_proc.tsv", help="Name or full path for output data.")
     parser.add_argument("--norm_function", type=str, default='zscore', help="Function for processing.")
-    parser.add_argument("--host", type=str, default='zscore', help="Optional. Path to SQLite DB. Example: sqlite:///your_filename.db. Be default: :memory:")
+    parser.add_argument("--host", type=str, default='zscore', help="Optional. Path to SQLite DB. Example: sqlite:///your_filename.db. By default: :memory:")
 
     args = process_args(parser.parse_args())
 
-    output_dir = args.pop('output_dir')
+    output_file = args.pop('output_file')
 
     loader = get_loader(**args)
     loader.load_data()
     loader.extract_features()
-    loader.export(output_dir)
+    loader.export(output_file)
 
 
 
